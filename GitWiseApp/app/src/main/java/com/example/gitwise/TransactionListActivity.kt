@@ -15,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.gitwise.datatypes.Transaction
@@ -25,14 +26,13 @@ import com.example.gitwise.ui.theme.GitwiseTheme
 import java.io.File
 
 class TransactionListActivity : ComponentActivity() {
-    private val transactionsState = mutableStateOf<List<Transaction>>(emptyList())
+    private val rawTransactionsState = mutableStateOf<List<Transaction>>(emptyList())
 
     fun getTransactions(context : Context) : List<Transaction> {
         // TODO dynamic
         val repoPath = context.filesDir.absolutePath + "\\GitWise"
         val dataFilePath = "$repoPath\\data.json"
-        val dataFile = File(dataFilePath)
-
+        
         val gitManager = GitManager(
             File(repoPath),
             null,
@@ -50,9 +50,7 @@ class TransactionListActivity : ComponentActivity() {
     }
 
     private fun refreshData(context: Context) {
-        val transactions = getTransactions(context)
-        val nativeSimplifier = com.example.gitwise.NaiveSimplifier.NaiveSimplifier()
-        transactionsState.value = nativeSimplifier.simplifiy(transactions)
+        rawTransactionsState.value = getTransactions(context)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,27 +60,52 @@ class TransactionListActivity : ComponentActivity() {
 
         setContent {
             GitwiseTheme {
+                var isSimplified by remember { mutableStateOf(false) }
+                val context = LocalContext.current
+
+                val displayedTransactions = remember(rawTransactionsState.value, isSimplified) {
+                    if (isSimplified) {
+                        val nativeSimplifier = com.example.gitwise.NaiveSimplifier.NaiveSimplifier()
+                        nativeSimplifier.simplifiy(rawTransactionsState.value)
+                    } else {
+                        rawTransactionsState.value
+                    }
+                }
+
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     floatingActionButton = {
-                        FloatingActionButton(onClick = {
-                            val intent = Intent(this, TransactionEditorActivity::class.java)
-                            startActivity(intent)
-                        }) {
-                            Icon(Icons.Filled.Add, contentDescription = "Add Transaction")
+                        if (!isSimplified) {
+                            FloatingActionButton(onClick = {
+                                val intent = Intent(context, TransactionEditorActivity::class.java)
+                                context.startActivity(intent)
+                            }) {
+                                Icon(Icons.Filled.Add, contentDescription = "Add Transaction")
+                            }
                         }
                     }
                 ) { innerPadding ->
-                    TransactionList(
-                        transactions = transactionsState.value,
-                        modifier = Modifier.padding(innerPadding),
-                        onEditClick = { transaction ->
-                            val intent = Intent(this, TransactionEditorActivity::class.java).apply {
-                                putExtra("transaction", transaction)
-                            }
-                            startActivity(intent)
+                    Column(modifier = Modifier.padding(innerPadding)) {
+                        Button(
+                            onClick = { isSimplified = !isSimplified },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp)
+                        ) {
+                            Text(if (isSimplified) "Show All Transactions" else "Show Simplified")
                         }
-                    )
+
+                        TransactionList(
+                            transactions = displayedTransactions,
+                            showEditButton = !isSimplified,
+                            onEditClick = { transaction ->
+                                val intent = Intent(context, TransactionEditorActivity::class.java).apply {
+                                    putExtra("transaction", transaction)
+                                }
+                                context.startActivity(intent)
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -97,18 +120,27 @@ class TransactionListActivity : ComponentActivity() {
 @Composable
 fun TransactionList(
     transactions: List<Transaction>,
+    showEditButton: Boolean,
     modifier: Modifier = Modifier,
     onEditClick: (Transaction) -> Unit
 ) {
     LazyColumn(modifier = modifier) {
         items(transactions) { transaction ->
-            TransactionItem(transaction, onEdit = { onEditClick(transaction) })
+            TransactionItem(
+                transaction = transaction,
+                showEditButton = showEditButton,
+                onEdit = { onEditClick(transaction) }
+            )
         }
     }
 }
 
 @Composable
-fun TransactionItem(transaction: Transaction, onEdit: () -> Unit) {
+fun TransactionItem(
+    transaction: Transaction,
+    showEditButton: Boolean,
+    onEdit: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -120,8 +152,10 @@ fun TransactionItem(transaction: Transaction, onEdit: () -> Unit) {
             Text(text = "${transaction.payer.name} owes ${transaction.ower.name}")
             Text(text = "Amount: ${transaction.sum}")
         }
-        IconButton(onClick = onEdit) {
-            Icon(Icons.Filled.Edit, contentDescription = "Edit Transaction")
+        if (showEditButton) {
+            IconButton(onClick = onEdit) {
+                Icon(Icons.Filled.Edit, contentDescription = "Edit Transaction")
+            }
         }
     }
 }
@@ -138,6 +172,10 @@ fun TransactionListPreview() {
     )
 
     GitwiseTheme {
-        TransactionList(transactions, onEditClick = {})
+        TransactionList(
+            transactions = transactions,
+            showEditButton = true,
+            onEditClick = {}
+        )
     }
 }
