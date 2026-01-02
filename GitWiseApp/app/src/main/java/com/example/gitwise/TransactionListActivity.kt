@@ -149,7 +149,8 @@ fun TransactionItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = "${transaction.payer.name} owes ${transaction.ower.name}")
+            Text(text = transaction.reason ?: "", style = MaterialTheme.typography.titleMedium)
+            Text(text = "${transaction.ower.name} owes to ${transaction.payer.name}")
             Text(text = "Amount: ${transaction.sum}")
         }
         if (showEditButton) {
@@ -166,9 +167,9 @@ fun TransactionItem(
 fun TransactionListPreview() {
     // Example data
     val transactions = listOf(
-        Transaction(Person("Alice"), Person("Bob"), 100uL),
-        Transaction(Person("Bob"), Person("Alice"), 100uL),
-        Transaction(Person("Bob"), Person("Charlie"), 50uL)
+        Transaction("Tacos", Person("Alice"), Person("Bob"), 100uL),
+        Transaction("Coke", Person("Bob"), Person("Alice"), 100uL),
+        Transaction("Weed", Person("Bob"), Person("Charlie"), 50uL)
     )
 
     GitwiseTheme {

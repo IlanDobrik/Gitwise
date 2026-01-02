@@ -25,5 +25,11 @@ fun readTransactions(file: File): List<Transaction> {
     val json = file.readText()
     val type = object : TypeToken<List<Transaction>>() {}.type
     Log.i(TAG, "returning transuctions")
-    return gson.fromJson(json, type)
+
+    try {
+        return gson.fromJson(json, type)
+    } catch (e: Exception) {
+        Log.e(TAG, "Error reading transactions", e)
+        return emptyList()
+    }
 }
