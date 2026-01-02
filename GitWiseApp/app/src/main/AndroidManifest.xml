@@ -27,6 +27,11 @@
             android:exported="false"
             android:label="Transactions"
             android:theme="@style/Theme.Gitwise" />
+        <activity
+            android:name=".TransactionEditorActivity"
+            android:exported="false"
+            android:label="Edit Transaction"
+            android:theme="@style/Theme.Gitwise" />
     </application>
 
 </manifest>
