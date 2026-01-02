@@ -43,6 +43,11 @@ class TransactionEditorActivity : ComponentActivity() {
                         initialTransaction = transaction,
                         onSave = { savedTransaction ->
                             saveTransaction(this, savedTransaction)
+                        },
+                        onDelete = {
+                            if (transaction != null) {
+                                deleteTransaction(this, transaction.id)
+                            }
                         }
                     )
                 }
@@ -70,13 +75,30 @@ class TransactionEditorActivity : ComponentActivity() {
         Log.i(TAG, "saved successfully")
         finish()
     }
+
+    private fun deleteTransaction(context: Context, transactionId: UUID) {
+        Log.i(TAG, "deleting transaction: $transactionId")
+        val repoPath = context.filesDir.absolutePath + "\\GitWise"
+        val dataFilePath = "$repoPath\\data.json"
+        val dataFile = File(dataFilePath)
+
+        val transactions = readTransactions(dataFile).toMutableList()
+        val wasRemoved = transactions.removeIf { it.id == transactionId }
+
+        if (wasRemoved) {
+            writeTransactions(dataFile, transactions)
+            Log.i(TAG, "deleted successfully")
+        }
+        finish()
+    }
 }
 
 @Composable
 fun TransactionEditor(
     modifier: Modifier = Modifier,
     initialTransaction: Transaction?,
-    onSave: (Transaction) -> Unit
+    onSave: (Transaction) -> Unit,
+    onDelete: () -> Unit
 ) {
     // If we're editing, use the transaction's ID. If new, create a new ID.
     val transactionId = initialTransaction?.id ?: UUID.randomUUID()
@@ -128,6 +150,17 @@ fun TransactionEditor(
         ) {
             Text("Save")
         }
+
+        if (initialTransaction != null) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                onClick = onDelete,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+            ) {
+                Text("Delete")
+            }
+        }
     }
 }
 
@@ -141,7 +174,8 @@ fun TransactionEditPreview() {
             TransactionEditor(
                 modifier = Modifier.padding(innerPadding),
                 initialTransaction = transaction,
-                onSave = { _ -> {} }
+                onSave = { _ -> {} },
+                onDelete = {}
             )
         }
     }
