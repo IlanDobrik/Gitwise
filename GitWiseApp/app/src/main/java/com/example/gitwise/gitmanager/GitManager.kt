@@ -28,6 +28,15 @@ class GitManager(
         }
     }
 
+    fun checkout(branch: String) {
+        val git = Git.open(repoPath)
+        try {
+            git.checkout().setName(branch).call()
+        } finally {
+            git.close()
+        }
+    }
+
     fun pull() {
         val git = Git.open(repoPath)
         try {

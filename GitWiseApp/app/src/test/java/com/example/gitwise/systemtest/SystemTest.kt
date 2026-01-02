@@ -12,7 +12,7 @@ import org.junit.Assert.*
 import java.io.File
 
 
-val repoPath = "C:\\Projects\\Gitwise"
+val repoPath = "C:\\Projects\\GitwiseData"
 val dataFilePath = repoPath + "\\data.json"
 val dataFile = File(dataFilePath)
 
@@ -28,6 +28,24 @@ class SystemTest {
     }
 
     @Test
+    fun addTransactionWithGit() {
+        val gitManager = GitManager(
+            File(repoPath),
+            null,
+            null
+        )
+        gitManager.pull()
+        gitManager.checkout("data")
+
+        var transactions = readTransactions(dataFile)
+        transactions = transactions.plus(Transaction(Person("Alice"), Person("Bob"), 100uL))
+
+        writeTransactions(dataFile, transactions)
+
+        gitManager.commit("Add transaction")
+    }
+
+    @Test
     fun main() {
         val gitManager = GitManager(
             File(repoPath),
@@ -35,6 +53,7 @@ class SystemTest {
             null
         )
         gitManager.pull()
+        gitManager.checkout("data")
 
         val transactions = readTransactions(dataFile)
 
