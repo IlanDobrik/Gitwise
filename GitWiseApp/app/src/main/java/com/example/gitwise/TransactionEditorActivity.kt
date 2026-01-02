@@ -1,6 +1,10 @@
 package com.example.gitwise
 
+import android.content.ContentValues.TAG
+import android.content.Context
+import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -17,29 +21,28 @@ import com.example.gitwise.transactionparser.readTransactions
 import com.example.gitwise.transactionparser.writeTransactions
 import com.example.gitwise.ui.theme.GitwiseTheme
 import java.io.File
+import java.util.UUID
 
 class TransactionEditorActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
-        val payerName = intent.getStringExtra("payer") ?: ""
-        val owerName = intent.getStringExtra("ower") ?: ""
-        val sumValue = intent.getLongExtra("sum", 0L)
-        val isEdit = intent.getBooleanExtra("is_edit", false)
-        val originalPayer = if (isEdit) payerName else null
-        val originalOwer = if (isEdit) owerName else null
-        val originalSum = if (isEdit) sumValue else null
+
+        // TODO upgrade to TIRAMISU
+        val transaction = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.getSerializableExtra("transaction", Transaction::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            intent.getSerializableExtra("transaction") as? Transaction
+        }
 
         setContent {
             GitwiseTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     TransactionEditor(
                         modifier = Modifier.padding(innerPadding),
-                        initialPayer = payerName,
-                        initialOwer = owerName,
-                        initialSum = if (sumValue > 0) sumValue.toString() else "",
-                        onSave = { payer, ower, sum ->
-                            saveTransaction(payer, ower, sum.toULong(), originalPayer, originalOwer, originalSum?.toULong())
+                        initialTransaction = transaction,
+                        onSave = { savedTransaction ->
+                            saveTransaction(this, savedTransaction)
                         }
                     )
                 }
@@ -47,27 +50,24 @@ class TransactionEditorActivity : ComponentActivity() {
         }
     }
 
-    private fun saveTransaction(payer: String, ower: String, sum: ULong, oldPayer: String?, oldOwer: String?, oldSum: ULong?) {
-        val repoPath = "C:\\Projects\\GitwiseData"
-        val dataFilePath = repoPath + "\\data.json"
-        val file = File(dataFilePath)
+    private fun saveTransaction(context: Context, transaction: Transaction) {
+        Log.i(TAG, "saving transaction: $transaction")
+        val repoPath = context.filesDir.absolutePath + "\\GitWise"
+        val dataFilePath = "$repoPath\\data.json"
+        val dataFile = File(dataFilePath)
         
-        val transactions = readTransactions(file).toMutableList()
-        
-        if (oldPayer != null && oldOwer != null && oldSum != null) {
-            val index = transactions.indexOfFirst { 
-                it.payer.name == oldPayer && it.ower.name == oldOwer && it.sum == oldSum 
-            }
-            if (index != -1) {
-                transactions[index] = Transaction(Person(payer), Person(ower), sum)
-            } else {
-                transactions.add(Transaction(Person(payer), Person(ower), sum))
-            }
+        val transactions = readTransactions(dataFile).toMutableList()
+        // If we have an existing transaction with the same ID, update it.
+        // Otherwise, add it.
+        val existingIndex = transactions.indexOfFirst { it.id == transaction.id }
+        if (existingIndex != -1) {
+            transactions[existingIndex] = transaction
         } else {
-            transactions.add(Transaction(Person(payer), Person(ower), sum))
+            transactions.add(transaction)
         }
 
-        writeTransactions(file, transactions)
+        writeTransactions(dataFile, transactions)
+        Log.i(TAG, "saved successfully")
         finish()
     }
 }
@@ -75,14 +75,15 @@ class TransactionEditorActivity : ComponentActivity() {
 @Composable
 fun TransactionEditor(
     modifier: Modifier = Modifier,
-    initialPayer: String,
-    initialOwer: String,
-    initialSum: String,
-    onSave: (String, String, Long) -> Unit
+    initialTransaction: Transaction?,
+    onSave: (Transaction) -> Unit
 ) {
-    var payer by remember { mutableStateOf(initialPayer) }
-    var ower by remember { mutableStateOf(initialOwer) }
-    var sum by remember { mutableStateOf(initialSum) }
+    // If we're editing, use the transaction's ID. If new, create a new ID.
+    val transactionId = initialTransaction?.id ?: UUID.randomUUID()
+    
+    var payer by remember { mutableStateOf(initialTransaction?.payer?.name ?: "") }
+    var ower by remember { mutableStateOf(initialTransaction?.ower?.name ?: "") }
+    var sum by remember { mutableStateOf(initialTransaction?.sum?.toString() ?: "") }
     val context = LocalContext.current
 
     Column(modifier = modifier.padding(16.dp)) {
@@ -111,7 +112,14 @@ fun TransactionEditor(
             onClick = {
                 val sumLong = sum.toLongOrNull()
                 if (payer.isNotBlank() && ower.isNotBlank() && sumLong != null && sumLong > 0) {
-                    onSave(payer, ower, sumLong)
+                    onSave(
+                        Transaction(
+                            payer = Person(payer),
+                            ower = Person(ower),
+                            sum = sumLong.toULong(),
+                            id = transactionId
+                        )
+                    )
                 } else {
                     Toast.makeText(context, "Invalid input", Toast.LENGTH_SHORT).show()
                 }
@@ -126,20 +134,14 @@ fun TransactionEditor(
 @Preview(showBackground = true)
 @Composable
 fun TransactionEditPreview() {
-    val payerName = "payer"
-    val owerName = "ower"
-    val sumValue = 130
+    val transaction = Transaction(Person("Payer"), Person("Ower"), 100uL)
 
     GitwiseTheme {
         Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
             TransactionEditor(
                 modifier = Modifier.padding(innerPadding),
-                initialPayer = payerName,
-                initialOwer = owerName,
-                initialSum = if (sumValue > 0) sumValue.toString() else "",
-                onSave = { payer, ower, sum ->
-                    {}
-                }
+                initialTransaction = transaction,
+                onSave = { _ -> {} }
             )
         }
     }

@@ -1,5 +1,6 @@
 package com.example.gitwise
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -26,13 +27,14 @@ import java.io.File
 class TransactionListActivity : ComponentActivity() {
     private val transactionsState = mutableStateOf<List<Transaction>>(emptyList())
 
-    fun getTransactions() : List<Transaction> {
+    fun getTransactions(context : Context) : List<Transaction> {
         // TODO dynamic
-        val repoPath = "C:\\Projects\\GitwiseData"
-        val dataFilePath = repoPath + "\\data.json"
+        val repoPath = context.filesDir.absolutePath + "\\GitWise"
+        val dataFilePath = "$repoPath\\data.json"
+        val dataFile = File(dataFilePath)
 
         val gitManager = GitManager(
-            File("C:\\Projects\\GitwiseData"),
+            File(repoPath),
             null,
             null
         )
@@ -47,8 +49,8 @@ class TransactionListActivity : ComponentActivity() {
         return readTransactions(File(dataFilePath))
     }
 
-    private fun refreshData() {
-        val transactions = getTransactions()
+    private fun refreshData(context: Context) {
+        val transactions = getTransactions(context)
         val nativeSimplifier = com.example.gitwise.NaiveSimplifier.NaiveSimplifier()
         transactionsState.value = nativeSimplifier.simplifiy(transactions)
     }
@@ -56,7 +58,7 @@ class TransactionListActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        refreshData()
+        refreshData(this)
 
         setContent {
             GitwiseTheme {
@@ -76,10 +78,7 @@ class TransactionListActivity : ComponentActivity() {
                         modifier = Modifier.padding(innerPadding),
                         onEditClick = { transaction ->
                             val intent = Intent(this, TransactionEditorActivity::class.java).apply {
-                                putExtra("payer", transaction.payer.name)
-                                putExtra("ower", transaction.ower.name)
-                                putExtra("sum", transaction.sum.toLong())
-                                putExtra("is_edit", true)
+                                putExtra("transaction", transaction)
                             }
                             startActivity(intent)
                         }
@@ -91,7 +90,7 @@ class TransactionListActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        refreshData()
+        refreshData(this)
     }
 }
 

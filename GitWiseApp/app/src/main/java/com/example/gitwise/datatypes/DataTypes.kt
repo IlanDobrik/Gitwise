@@ -1,9 +1,15 @@
 package com.example.gitwise.datatypes
 
-data class Person(val name: String)
+import java.io.Serializable
+import java.util.UUID
+
+data class Person(val name: String): Serializable
 
 data class Transaction(
     val payer: Person,
     val ower: Person,
-    val sum: ULong
-)
+    val sum: ULong,
+
+    // Always last for convenience
+    val id: UUID = UUID.randomUUID(),
+): Serializable

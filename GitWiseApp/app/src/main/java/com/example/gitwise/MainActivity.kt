@@ -1,7 +1,10 @@
 package com.example.gitwise
 
+import android.content.ContentValues.TAG
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -17,11 +20,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.gitwise.gitmanager.GitManager
+import com.example.gitwise.gitmanager.clone
 import com.example.gitwise.ui.theme.GitwiseTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        init(this)
+
         enableEdgeToEdge()
         setContent {
             GitwiseTheme {
@@ -39,6 +47,16 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+}
+
+fun init(context: Context) {
+    Log.i(TAG, "initializing")
+    try{
+        clone(context.filesDir)
+    } catch (e: Exception) {
+        Log.e(TAG, "Error initializing", e)
+    }
+    Log.i(TAG, "initialized")
 }
 
 @Composable

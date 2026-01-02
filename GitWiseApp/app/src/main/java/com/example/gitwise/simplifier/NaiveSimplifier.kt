@@ -9,7 +9,7 @@ class NaiveSimplifier : Simplifier {
     fun netBalance(transactions: List<Transaction>): Map<Person, Long> {
         val balance = mutableMapOf<Person, Long>()
 
-        // Step 1: Compute net balance per person
+        // Compute net balance per person
         for (transaction in transactions) {
             balance[transaction.payer] = (balance[transaction.payer] ?: 0L) + transaction.sum.toLong()
             balance[transaction.ower]  = (balance[transaction.ower]  ?: 0L) - transaction.sum.toLong()
@@ -22,8 +22,8 @@ class NaiveSimplifier : Simplifier {
             val balance = netBalance(transactions)
 
             // Separate creditors and debtors
-            val creditors = ArrayDeque<Pair<Person, Long>>() // positive balance
-            val debtors   = ArrayDeque<Pair<Person, Long>>() // negative balance
+            val creditors = ArrayDeque<Pair<Person, Long>>()
+            val debtors   = ArrayDeque<Pair<Person, Long>>()
 
             for ((person, amount) in balance) {
                 when {
