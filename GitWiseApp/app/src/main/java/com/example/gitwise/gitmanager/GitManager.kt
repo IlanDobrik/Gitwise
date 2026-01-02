@@ -32,6 +32,17 @@ class GitManager(
         }
     }
 
+    fun push() {
+        Log.i(TAG, "pushing")
+        val git = Git.open(repoPath)
+        try {
+            git.push().call()
+            Log.i(TAG, "pushed successfully")
+        } finally {
+            git.close()
+        }
+    }
+
     fun checkout(branch: String) {
         val git = Git.open(repoPath)
         try {

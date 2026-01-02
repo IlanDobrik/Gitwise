@@ -23,6 +23,10 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".ConfigActivity"
+            android:exported="false"
+            android:label="Configuration" />
+        <activity
             android:name=".TransactionListActivity"
             android:exported="false"
             android:label="Transactions"
