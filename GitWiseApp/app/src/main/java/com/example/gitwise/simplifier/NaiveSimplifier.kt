@@ -44,8 +44,8 @@ class NaiveSimplifier : Simplifier {
                 result.add(
                     Transaction(
                         reason = "Settlement",
-                        payer = debtor,
-                        ower = creditor,
+                        payer = creditor,
+                        ower = debtor,
                         sum = settled.toULong()
                     )
                 )
