@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="true"
@@ -12,7 +13,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Gitwise">
         <activity
-            android:name=".MainActivity"
+            android:name=".ui.screens.login.LoginActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.Gitwise">
@@ -22,16 +23,17 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".TransactionListActivity"
-            android:exported="false"
-            android:label="Transactions"
-            android:theme="@style/Theme.Gitwise" />
-        <activity
-            android:name=".TransactionEditorActivity"
-            android:exported="false"
-            android:label="Edit Transaction"
-            android:theme="@style/Theme.Gitwise" />
+        <activity android:name=".ui.screens.repo_list.RepoListActivity" />
+<!--        <activity-->
+<!--            android:name=".TransactionListActivity"-->
+<!--            android:exported="false"-->
+<!--            android:label="Transactions"-->
+<!--            android:theme="@style/Theme.Gitwise" />-->
+<!--        <activity-->
+<!--            android:name=".TransactionEditorActivity"-->
+<!--            android:exported="false"-->
+<!--            android:label="Edit Transaction"-->
+<!--            android:theme="@style/Theme.Gitwise" />-->
     </application>
 
 </manifest>
