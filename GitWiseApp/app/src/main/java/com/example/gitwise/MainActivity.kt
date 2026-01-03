@@ -3,7 +3,10 @@ package com.example.gitwise
 import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
+import android.os.StrictMode
+import android.os.StrictMode.ThreadPolicy
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -25,17 +28,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.gitwise.gitmanager.GitManager
-import com.example.gitwise.gitmanager.clone
+import com.example.gitwise.gitmanager.getRepoPath
 import com.example.gitwise.ui.theme.GitwiseTheme
+import java.io.File
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val context : Context = this;
-
-        init(context)
+        val context : Context = this
+        // TODO remove
+        if (Build.VERSION.SDK_INT > 9) {
+            val policy = ThreadPolicy.Builder().permitAll().build()
+            StrictMode.setThreadPolicy(policy)
+        }
 
 
         enableEdgeToEdge()
@@ -88,27 +95,11 @@ class MainActivity : ComponentActivity() {
 }
 
 
-fun init(context: Context) {
-    Log.i(TAG, "initializing")
-    try{
-        clone(context.filesDir)
-    } catch (e: Exception) {
-        Log.e(TAG, "Error initializing", e)
-    }
-    Log.i(TAG, "initialized")
-}
-
 fun reset(context: Context) {
     Log.i(TAG, "resetting")
+    getRepoPath(context).deleteRecursively()
 }
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
 
 @Preview(showBackground = true)
 @Composable

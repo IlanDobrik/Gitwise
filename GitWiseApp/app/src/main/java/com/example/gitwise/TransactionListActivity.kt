@@ -3,6 +3,7 @@ package com.example.gitwise
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
@@ -18,9 +19,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.gitwise.config.getConfig
 import com.example.gitwise.datatypes.Transaction
 import com.example.gitwise.datatypes.Person
 import com.example.gitwise.gitmanager.GitManager
+import com.example.gitwise.gitmanager.getDataFile
+import com.example.gitwise.gitmanager.getGitManager
 import com.example.gitwise.transactionparser.readTransactions
 import com.example.gitwise.ui.theme.GitwiseTheme
 import java.io.File
@@ -29,24 +33,13 @@ class TransactionListActivity : ComponentActivity() {
     private val rawTransactionsState = mutableStateOf<List<Transaction>>(emptyList())
 
     fun getTransactions(context : Context) : List<Transaction> {
-        // TODO dynamic
-        val repoPath = context.filesDir.absolutePath + "\\GitWise"
-        val dataFilePath = "$repoPath\\data.json"
-        
-        val gitManager = GitManager(
-            File(repoPath),
-            null,
-            null
-        )
         try {
-            gitManager.pull()
-            gitManager.checkout("data")
-            gitManager.pull() // is needed?
+            val gitManager = getGitManager(context)
         } catch (e: Exception) {
-            e.printStackTrace()
+            Toast.makeText(context, "Error pulling data: ${e.message}", Toast.LENGTH_SHORT).show()
         }
 
-        return readTransactions(File(dataFilePath))
+        return readTransactions(getDataFile(context))
     }
 
     private fun refreshData(context: Context) {

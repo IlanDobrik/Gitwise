@@ -17,10 +17,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.gitwise.datatypes.Person
 import com.example.gitwise.datatypes.Transaction
+import com.example.gitwise.gitmanager.getDataFile
+import com.example.gitwise.gitmanager.getGitManager
 import com.example.gitwise.transactionparser.readTransactions
 import com.example.gitwise.transactionparser.writeTransactions
 import com.example.gitwise.ui.theme.GitwiseTheme
-import java.io.File
 import java.util.UUID
 
 class TransactionEditorActivity : ComponentActivity() {
@@ -57,13 +58,9 @@ class TransactionEditorActivity : ComponentActivity() {
 
     private fun saveTransaction(context: Context, transaction: Transaction) {
         Log.i(TAG, "saving transaction: $transaction")
-        val repoPath = context.filesDir.absolutePath + "\\GitWise"
-        val dataFilePath = "$repoPath\\data.json"
-        val dataFile = File(dataFilePath)
+        val dataFile = getDataFile(context)
         
         val transactions = readTransactions(dataFile).toMutableList()
-        // If we have an existing transaction with the same ID, update it.
-        // Otherwise, add it.
         val existingIndex = transactions.indexOfFirst { it.id == transaction.id }
         if (existingIndex != -1) {
             transactions[existingIndex] = transaction
@@ -72,16 +69,17 @@ class TransactionEditorActivity : ComponentActivity() {
         }
 
         writeTransactions(dataFile, transactions)
+
+        val gitManager = getGitManager(context)
+        gitManager.commitPush(context, "Added " + transaction.id)
+
         Log.i(TAG, "saved successfully")
         finish()
     }
 
     private fun deleteTransaction(context: Context, transactionId: UUID) {
         Log.i(TAG, "deleting transaction: $transactionId")
-        val repoPath = context.filesDir.absolutePath + "\\GitWise"
-        val dataFilePath = "$repoPath\\data.json"
-        val dataFile = File(dataFilePath)
-
+        val dataFile = getDataFile(context)
         val transactions = readTransactions(dataFile).toMutableList()
         val wasRemoved = transactions.removeIf { it.id == transactionId }
 
