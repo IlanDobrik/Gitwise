@@ -2,9 +2,9 @@ package com.example.gitwise.ui.screens.repo_list
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.gitwise.gitmanager.GitHubAPI
-import com.example.gitwise.gitmanager.GitHubRepo
-import com.example.gitwise.gitmanager.fetchRepositoriesSuspend
+import com.example.gitwise.githubapi.GitHubAPI
+import com.example.gitwise.githubapi.GitHubRepo
+import com.example.gitwise.githubapi.fetchRepositoriesSuspend
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch

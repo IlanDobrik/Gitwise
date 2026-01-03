@@ -1,5 +1,7 @@
 package com.example.gitwise.gitmanager;
 
+import com.example.gitwise.githubapi.GitHubAPI
+import com.example.gitwise.githubapi.GitHubRepo
 import org.junit.Test;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;

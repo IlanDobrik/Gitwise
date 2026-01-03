@@ -1,10 +1,10 @@
-package com.example.gitwise.gitmanager
+package com.example.gitwise.githubapi
 
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.resume
 
-
+// Wraps the functions, so it will be usable in the UI
 suspend fun GitHubAPI.validateTokenSuspend(): Pair<Boolean, String?> =
     suspendCancellableCoroutine { cont ->
         val resumed = AtomicBoolean(false)
@@ -24,7 +24,7 @@ suspend fun GitHubAPI.validateTokenSuspend(): Pair<Boolean, String?> =
         }
     }
 
-
+// Wraps the functions, so it will be usable in the UI
 suspend fun GitHubAPI.fetchRepositoriesSuspend(): Pair<List<GitHubRepo>?, String?> =
     suspendCancellableCoroutine { cont ->
         val resumed = AtomicBoolean(false)

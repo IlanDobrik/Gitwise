@@ -1,4 +1,4 @@
-package com.example.gitwise.gitmanager;
+package com.example.gitwise.githubapi
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;

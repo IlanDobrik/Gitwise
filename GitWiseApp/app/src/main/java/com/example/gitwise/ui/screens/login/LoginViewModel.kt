@@ -2,8 +2,8 @@ package com.example.gitwise.ui.screens.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.gitwise.gitmanager.GitHubAPI
-import com.example.gitwise.gitmanager.validateTokenSuspend
+import com.example.gitwise.githubapi.GitHubAPI
+import com.example.gitwise.githubapi.validateTokenSuspend
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
