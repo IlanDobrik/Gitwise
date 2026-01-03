@@ -5,14 +5,21 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.gitwise.ui.screens.repo_list.RepoListActivity
+import com.example.gitwise.core.storage.TokenStore
+import com.example.gitwise.ui.screens.login.LoginViewModel
+
 
 class LoginActivity : ComponentActivity() {
 
@@ -21,48 +28,66 @@ class LoginActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
-        val savedToken = prefs.getString(KEY_TOKEN, null)
-
-        if (!savedToken.isNullOrBlank()) {
-            vm.setToken(savedToken)
-        }
+        val store = TokenStore(this)
 
         setContent {
             val state by vm.state.collectAsState()
+            var autoTried by remember { mutableStateOf(false) }
 
-            Surface(
-                modifier = Modifier.fillMaxSize(),
-                color = MaterialTheme.colorScheme.background
-            ) {
+            LaunchedEffect(Unit) {
+                if (!autoTried) {
+                    autoTried = true
+                    val saved = store.loadToken()
+                    if (!saved.isNullOrBlank()) {
+                        vm.tryAutoLogin(
+                            savedToken = saved,
+                            onSuccess = { token, username ->
+                                startActivity(
+                                    Intent(this@LoginActivity, RepoListActivity::class.java)
+                                        .putExtra(RepoListActivity.EXTRA_TOKEN, token)
+                                        .putExtra(RepoListActivity.EXTRA_USERNAME, username)
+                                )
+                                finish()
+                            },
+                            onInvalid = {
+                                store.clear()
+                                vm.setToken("")
+                                vm.setError("Saved token is invalid. Please login again.")
+                            }
+                        )
+                    }
+                }
+            }
+
+            Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                 LoginScreen(
                     state = state,
                     onTokenChange = vm::setToken,
                     onLogin = {
-                        vm.login { token, username ->
-                            prefs.edit().putString(KEY_TOKEN, token).apply()
-
-                            startActivity(
-                                Intent(this, RepoListActivity::class.java)
-                                    .putExtra(RepoListActivity.Companion.EXTRA_TOKEN, token)
-                                    .putExtra(RepoListActivity.Companion.EXTRA_USERNAME, username)
-                            )
-                            finish()
-                        }
+                        vm.login(
+                            onSuccess = { token, username ->
+                                store.saveToken(token)
+                                startActivity(
+                                    Intent(this@LoginActivity, RepoListActivity::class.java)
+                                        .putExtra(RepoListActivity.EXTRA_TOKEN, token)
+                                        .putExtra(RepoListActivity.EXTRA_USERNAME, username)
+                                )
+                                finish()
+                            },
+                            onInvalid = { msg ->
+                                vm.setError(msg)
+                            }
+                        )
                     }
                 )
             }
         }
     }
-
-    companion object {
-        private const val PREFS = "GitWise"
-        private const val KEY_TOKEN = "token"
-    }
 }
 
+
 @Composable
-private fun LoginScreen(
+fun LoginScreen(
     state: LoginUiState,
     onTokenChange: (String) -> Unit,
     onLogin: () -> Unit
@@ -110,3 +135,4 @@ private fun LoginScreen(
         }
     }
 }
+

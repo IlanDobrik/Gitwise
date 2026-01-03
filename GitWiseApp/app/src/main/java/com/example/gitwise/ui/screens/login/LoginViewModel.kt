@@ -23,7 +23,14 @@ class LoginViewModel : ViewModel() {
         _state.value = _state.value.copy(token = token.trim(), error = null)
     }
 
-    fun login(onSuccess: (token: String, username: String) -> Unit) {
+    fun setError(msg: String?) {
+        _state.value = _state.value.copy(error = msg)
+    }
+
+    fun login(
+        onSuccess: (token: String, username: String) -> Unit,
+        onInvalid: (String) -> Unit
+    ) {
         val token = _state.value.token.trim()
         if (token.isBlank()) return
 
@@ -37,11 +44,18 @@ class LoginViewModel : ViewModel() {
                 _state.value = _state.value.copy(loading = false, error = null)
                 onSuccess(token, usernameOrError)
             } else {
-                _state.value = _state.value.copy(
-                    loading = false,
-                    error = usernameOrError ?: "Authentication failed"
-                )
+                _state.value = _state.value.copy(loading = false)
+                onInvalid(usernameOrError ?: "Invalid token")
             }
         }
+    }
+
+    fun tryAutoLogin(
+        savedToken: String,
+        onSuccess: (token: String, username: String) -> Unit,
+        onInvalid: (String) -> Unit
+    ) {
+        setToken(savedToken)
+        login(onSuccess = onSuccess, onInvalid = onInvalid)
     }
 }
