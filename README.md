@@ -10,3 +10,4 @@
 * Decide with @MartinRoz about repo design
 * Seperate backend and front
 * Fix previews
+* remove context from non application components
