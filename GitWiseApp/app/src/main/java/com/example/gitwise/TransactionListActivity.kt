@@ -19,15 +19,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.gitwise.config.getConfig
 import com.example.gitwise.datatypes.Transaction
 import com.example.gitwise.datatypes.Person
-import com.example.gitwise.gitmanager.GitManager
 import com.example.gitwise.gitmanager.getDataFile
 import com.example.gitwise.gitmanager.getGitManager
 import com.example.gitwise.transactionparser.readTransactions
 import com.example.gitwise.ui.theme.GitwiseTheme
-import java.io.File
 
 class TransactionListActivity : ComponentActivity() {
     private val rawTransactionsState = mutableStateOf<List<Transaction>>(emptyList())
@@ -59,7 +56,7 @@ class TransactionListActivity : ComponentActivity() {
                 val displayedTransactions = remember(rawTransactionsState.value, isSimplified) {
                     if (isSimplified) {
                         val nativeSimplifier = com.example.gitwise.NaiveSimplifier.NaiveSimplifier()
-                        nativeSimplifier.simplifiy(rawTransactionsState.value)
+                        nativeSimplifier.simplify(rawTransactionsState.value)
                     } else {
                         rawTransactionsState.value
                     }

@@ -4,5 +4,5 @@ import com.example.gitwise.datatypes.Transaction
 
 
 interface Simplifier {
-    fun simplifiy(transactions: List<Transaction>) : List<Transaction>
+    fun simplify(transactions: List<Transaction>) : List<Transaction>
 }

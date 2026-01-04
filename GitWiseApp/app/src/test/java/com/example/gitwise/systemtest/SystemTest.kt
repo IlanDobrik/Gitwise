@@ -58,7 +58,7 @@ class SystemTest {
         val transactions = readTransactions(dataFile)
 
         val simplifier = NaiveSimplifier()
-        val simplifiedTransactions = simplifier.simplifiy(transactions)
+        val simplifiedTransactions = simplifier.simplify(transactions)
 
         println(simplifiedTransactions)
     }

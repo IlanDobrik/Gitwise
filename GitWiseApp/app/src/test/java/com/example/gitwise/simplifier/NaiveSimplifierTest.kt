@@ -11,7 +11,7 @@ class NaiveSimplifierTest {
     @Test
     fun testSimplifyNoTransactions() {
         val simplifier = NaiveSimplifier()
-        val result = simplifier.simplifiy(emptyList())
+        val result = simplifier.simplify(emptyList())
         assertEquals(0, result.size)
     }
 
@@ -22,7 +22,7 @@ class NaiveSimplifierTest {
         val transactions = listOf(Transaction(alice, bob, 100uL))
 
         val simplifier = NaiveSimplifier()
-        val result = simplifier.simplifiy(transactions)
+        val result = simplifier.simplify(transactions)
 
         assertEquals(1, result.size)
         assertEquals(alice, result[0].payer)
@@ -41,7 +41,7 @@ class NaiveSimplifierTest {
         )
 
         val simplifier = NaiveSimplifier()
-        val result = simplifier.simplifiy(transactions)
+        val result = simplifier.simplify(transactions)
 
         assertEquals(1, result.size)
         assertEquals(alice, result[0].payer)
@@ -62,7 +62,7 @@ class NaiveSimplifierTest {
         )
 
         val simplifier = NaiveSimplifier()
-        val result = simplifier.simplifiy(transactions)
+        val result = simplifier.simplify(transactions)
 
         assertEquals(0, result.size)
     }
@@ -86,7 +86,7 @@ class NaiveSimplifierTest {
         )
 
         val simplifier = NaiveSimplifier()
-        val result = simplifier.simplifiy(transactions)
+        val result = simplifier.simplify(transactions)
         
         // Check net balances indirectly by summing result
         val netBalances = mutableMapOf<Person, Long>()

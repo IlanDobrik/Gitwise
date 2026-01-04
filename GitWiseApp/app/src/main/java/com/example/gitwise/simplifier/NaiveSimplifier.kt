@@ -18,7 +18,7 @@ class NaiveSimplifier : Simplifier {
         return balance
     }
 
-    override fun simplifiy(transactions: List<Transaction>): List<Transaction> {
+    override fun simplify(transactions: List<Transaction>): List<Transaction> {
             val balance = netBalance(transactions)
 
             // Separate creditors and debtors
