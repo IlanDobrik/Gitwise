@@ -19,17 +19,17 @@ fun writeTransactions(file: File, transactions: List<Transaction>) {
 fun readTransactions(file: File): List<Transaction> {
     Log.i(TAG, "reading transactions")
     if (!file.exists()) {
-        Log.i(TAG, "file does not exists. Returing empty")
+        Log.w(TAG, "file does not exists. Returning empty")
         return emptyList()
     }
     val json = file.readText()
     val type = object : TypeToken<List<Transaction>>() {}.type
-    Log.i(TAG, "returning transuctions")
+    Log.i(TAG, "returning transactions")
 
     try {
         return gson.fromJson(json, type)
     } catch (e: Exception) {
-        Log.e(TAG, "Error reading transactions", e)
+        Log.w(TAG, "Error reading transactions. Returning empty", e)
         return emptyList()
     }
 }
