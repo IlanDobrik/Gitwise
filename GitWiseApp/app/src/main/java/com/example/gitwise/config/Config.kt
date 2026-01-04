@@ -4,7 +4,7 @@ import android.content.Context
 import com.example.gitwise.datatypes.Person
 import com.google.gson.Gson
 
-private const val TAG = "GitWise"
+
 private const val PREF_NAME = "config"
 private const val KEY_CONFIG = "config"
 

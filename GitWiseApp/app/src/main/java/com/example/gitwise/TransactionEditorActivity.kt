@@ -1,6 +1,6 @@
 package com.example.gitwise
 
-import android.content.ContentValues.TAG
+import com.example.gitwise.logger.TAG
 import android.content.Context
 import android.os.Build
 import android.os.Bundle

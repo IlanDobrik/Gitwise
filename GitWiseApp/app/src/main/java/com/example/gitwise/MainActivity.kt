@@ -1,12 +1,12 @@
 package com.example.gitwise
 
-import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.os.StrictMode
 import android.os.StrictMode.ThreadPolicy
+import com.example.gitwise.logger.TAG
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent

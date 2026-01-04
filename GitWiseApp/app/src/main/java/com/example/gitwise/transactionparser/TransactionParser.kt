@@ -1,6 +1,6 @@
 package com.example.gitwise.transactionparser
 
-import android.content.ContentValues.TAG
+import com.example.gitwise.logger.TAG
 import android.util.Log
 import com.example.gitwise.datatypes.Transaction
 import com.google.gson.Gson

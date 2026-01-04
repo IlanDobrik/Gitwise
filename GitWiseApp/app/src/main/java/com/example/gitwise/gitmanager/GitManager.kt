@@ -1,9 +1,8 @@
 package com.example.gitwise.gitmanager
 
-import android.content.ContentValues.TAG
 import android.content.Context
+import com.example.gitwise.logger.TAG
 import android.util.Log
-import com.example.gitwise.config.getConfig
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import java.io.File
