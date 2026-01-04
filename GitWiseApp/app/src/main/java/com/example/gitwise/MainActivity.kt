@@ -28,9 +28,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.gitwise.config.clearConfig
 import com.example.gitwise.gitmanager.getRepoPath
 import com.example.gitwise.ui.theme.GitwiseTheme
-import java.io.File
 
 
 class MainActivity : ComponentActivity() {
@@ -48,47 +48,16 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             GitwiseTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    // Added padding 16.dp to the Column for better spacing from edges
-                    Column(modifier = Modifier
-                        .padding(innerPadding)
-                        .padding(16.dp),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        {
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Existing Transaction Button
-                        Button(
-                            modifier = Modifier.fillMaxWidth(),
-                            onClick = {
-                            startActivity(Intent(this@MainActivity, TransactionListActivity::class.java))
-                        }) {
-                            Text("View Transactions")
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // New Config Activity Button
-                        Button(modifier = Modifier.fillMaxWidth(),
-                            onClick = {
-                            startActivity(Intent(this@MainActivity, ConfigActivity::class.java))
-                        }) {
-                            Text("Configuration")
-                        }
-
-                        Spacer(modifier = Modifier.height(32.dp))
-
-                        Button(
-
-                            onClick = { reset(context) },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
-                            modifier = Modifier.height(36.dp) // Smaller height
-                        ) {
-                            Text("Reset")
-                        }
-                    })
-                }
+                GreetingScreen(context,
+                {
+                    startActivity(Intent(this@MainActivity, TransactionListActivity::class.java))
+                },
+                {
+                    startActivity(Intent(this@MainActivity, ConfigActivity::class.java))
+                },
+                {
+                    reset(context)
+                })
             }
         }
     }
@@ -101,26 +70,28 @@ fun reset(context: Context) {
     clearConfig(context)
 }
 
-
-@Preview(showBackground = true)
 @Composable
-fun GreetingPreview() {
-    GitwiseTheme {
-        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-            // Added padding 16.dp to the Column for better spacing from edges
-            Column(modifier = Modifier
-                .padding(innerPadding)
-                .padding(16.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally,
+fun GreetingScreen(context: Context?,
+                   viewTransactionOnClick: () -> Unit = {},
+                   newConfigOnClick: () -> Unit = {},
+                   resetOnClick: () -> Unit = {}) {
+    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+        // Added padding 16.dp to the Column for better spacing from edges
+        Column(modifier = Modifier
+            .padding(innerPadding)
+            .padding(16.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
             {
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Existing Transaction Button
-                Button(modifier = Modifier.fillMaxWidth(),
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
                     onClick = {
+                        viewTransactionOnClick()
 
-                }) {
+                    }) {
                     Text("View Transactions")
                 }
 
@@ -129,23 +100,31 @@ fun GreetingPreview() {
                 // New Config Activity Button
                 Button(modifier = Modifier.fillMaxWidth(),
                     onClick = {
-
-                }) {
+                        newConfigOnClick()
+                    }) {
                     Text("Configuration")
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))
 
                 Button(
-                    onClick = {  },
+                    onClick = { resetOnClick() },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
-                    modifier = Modifier.height(36.dp),
-
+                    modifier = Modifier.height(36.dp) // Smaller height
                 ) {
                     Text("Reset")
                 }
-            }
-            )
-        }
+        })
+    }
+
+}
+
+
+@Preview(showBackground = true)
+@Composable
+fun GreetingPreview() {
+    GitwiseTheme {
+        GreetingScreen(null, {}, {}, {})
     }
 }
+
