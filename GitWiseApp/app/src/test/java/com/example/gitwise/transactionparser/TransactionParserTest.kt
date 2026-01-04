@@ -26,8 +26,8 @@ class TransactionParserTest {
     @Test
     fun testWriteAndReadTransactions() {
         val transactions = listOf(
-            Transaction(Person("Alice"), Person("Bob"), 100uL),
-            Transaction(Person("Bob"), Person("Charlie"), 50uL)
+            Transaction("tacos", Person("Alice"), Person("Bob"), 100uL),
+            Transaction("pizza", Person("Bob"), Person("Charlie"), 50uL)
         )
 
         writeTransactions(testFile, transactions)
