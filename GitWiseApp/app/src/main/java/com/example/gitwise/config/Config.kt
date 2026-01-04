@@ -39,3 +39,10 @@ fun getConfig(context: Context): Config {
 
     return config
 }
+
+fun clearConfig(context: Context) {
+    context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        .edit()
+        .clear()
+        .apply()
+}

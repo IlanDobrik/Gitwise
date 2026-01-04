@@ -160,7 +160,6 @@ fun ConfigPreview() {
                     .padding(innerPadding)
                     .padding(16.dp)
             ) {
-
                 ConfigScreen(null, Config(null, false, null))
             }
         }

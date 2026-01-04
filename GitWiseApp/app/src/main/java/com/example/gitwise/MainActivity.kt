@@ -98,6 +98,7 @@ class MainActivity : ComponentActivity() {
 fun reset(context: Context) {
     Log.i(TAG, "resetting")
     getRepoPath(context).deleteRecursively()
+    clearConfig(context)
 }
 
 
