@@ -29,7 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.gitwise.config.clearConfig
-import com.example.gitwise.gitmanager.getRepoPath
+import com.example.gitwise.gitmanager.getRepoBase
 import com.example.gitwise.ui.theme.GitwiseTheme
 
 
@@ -65,8 +65,7 @@ class MainActivity : ComponentActivity() {
 
 
 fun reset(context: Context) {
-    Log.i(TAG, "resetting")
-    getRepoPath(context).deleteRecursively()
+    getRepoBase(context).deleteRecursively()
     clearConfig(context)
 }
 

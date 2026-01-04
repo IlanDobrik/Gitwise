@@ -8,9 +8,10 @@ import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import java.io.File
 
 
-val REPO_URL = "https://github.com/IlanDobrik/Gitwise.git"
+const val REPO_URL = "https://github.com/IlanDobrik/Gitwise.git"
 
 class GitManager(
+    private val commit: Boolean,
     private val repoPath: File,
     private val username: String? = null,
     private val token: String? = null
@@ -23,38 +24,31 @@ class GitManager(
         }
     }
 
-    fun commit(context: Context, message: String) {
-        val config = getConfig(context)
-        if (!config.commit) {
+    fun commit(message: String) {
+        if (!commit) {
             Log.i(TAG, "Not committing")
             // Do nothing
             return
         }
 
         Log.i(TAG, "commiting")
-        val git = Git.open(repoPath)
-        try {
+        Git.open(repoPath).use { git ->
             git.add().addFilepattern(".").call()
             git.commit().setMessage(message).call()
             Log.i(TAG, "committed successfully")
-        } finally {
-            git.close()
         }
     }
 
-    fun commitPush(context: Context, message: String) {
-        commit(context, message)
+    fun commitPush(message: String) {
+        commit(message)
         push()
     }
 
     fun push() {
         Log.i(TAG, "pushing")
-        val git = Git.open(repoPath)
-        try {
+        Git.open(repoPath).use { git ->
             git.push().call()
             Log.i(TAG, "pushed successfully")
-        } finally {
-            git.close()
         }
     }
 
@@ -71,45 +65,36 @@ class GitManager(
     }
 
     fun checkout(branch: String) {
-        val git = Git.open(repoPath)
+        Log.i(TAG, "Attempting to checkout: $branch")
         try {
-            fetch()
+            Git.open(repoPath).use { git ->
+                fetch()
+                val localBranchExists = git.branchList().call()
+                    .any { it.name == "refs/heads/$branch" }
+                val checkoutCommand = git.checkout().setName(branch)
 
-            Log.i(TAG, "Attempting to checkout: $branch")
+                if (!localBranchExists) {
+                    Log.i(TAG, "Branch '$branch' does not exist locally. Creating it from 'origin/$branch'")
+                    checkoutCommand.setCreateBranch(true)
+                    checkoutCommand.setStartPoint("origin/$branch")
+                }
 
-            val localBranchExists = git.branchList().call()
-                .any { it.name == "refs/heads/$branch" }
-
-            val checkoutCommand = git.checkout().setName(branch)
-
-            if (!localBranchExists) {
-                Log.i(TAG, "Branch '$branch' does not exist locally. Creating it from 'origin/$branch'")
-                // 3. If local doesn't exist, create it tracking the remote branch
-                checkoutCommand.setCreateBranch(true)
-                checkoutCommand.setStartPoint("origin/$branch")
+                checkoutCommand.call()
+                Log.i(TAG, "Checked out to $branch successfully")
             }
-
-            checkoutCommand.call()
-            Log.i(TAG, "Checked out to $branch successfully")
-
         } catch (e: Exception) {
             Log.e(TAG, "Checkout failed for branch '$branch': ${e.message}")
             throw e
-        } finally {
-            git.close()
         }
     }
 
     fun pull() {
-        val git = Git.open(repoPath)
-        try {
+        Git.open(repoPath).use { git ->
             val pullCommand = git.pull()
             getCredentialsProvider()?.let {
                 pullCommand.setCredentialsProvider(it)
             }
             pullCommand.call()
-        } finally {
-            git.close()
         }
     }
 }
@@ -125,30 +110,28 @@ private fun clone(url: String, path: File) {
         Log.i(TAG, "cloned successfully")
     }
     catch (e: Exception) {
-        Log.i(TAG, "Error cloning repository: " + e)
+        Log.i(TAG, "Error cloning repository: $e")
     }
 
 }
 
-fun getRepoPath(context: Context) : File {
-    return File(context.filesDir.path + "/GitWise")
-}
+fun getGitManager(repoBase: File, commit: Boolean) : GitManager{
+    val gitManager = GitManager(commit, repoBase, null, null)
 
-fun getGitManager(context: Context) : GitManager{
-    val repoPath = getRepoPath(context)
-    val gitManager = GitManager(repoPath, null, null)
-    val config = getConfig(context)
-
-    if (!repoPath.exists()) {
-        clone(REPO_URL, repoPath)
+    if (!repoBase.exists()) {
+        clone(REPO_URL, repoBase)
     }
 
-    gitManager.checkout(config.branchName ?: "data")
+    // TODO change when move to repo orientation
+    gitManager.checkout("data")
     gitManager.pull()
     return gitManager
 }
 
-fun getDataFile(context: Context) : File {
-    getGitManager(context) // Make sure git repo is initialized
-    return File(getRepoPath(context).absolutePath + "\\data.json")
+fun getDataFile(repoBase: File) : File {
+    return File("${repoBase.path}\\data.json")
+}
+
+fun getRepoBase(context: Context) : File {
+    return File("${context.filesDir.absolutePath}\\GitWise")
 }

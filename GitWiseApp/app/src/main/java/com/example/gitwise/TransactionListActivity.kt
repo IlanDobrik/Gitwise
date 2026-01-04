@@ -19,10 +19,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.gitwise.config.getConfig
 import com.example.gitwise.datatypes.Transaction
 import com.example.gitwise.datatypes.Person
 import com.example.gitwise.gitmanager.getDataFile
 import com.example.gitwise.gitmanager.getGitManager
+import com.example.gitwise.gitmanager.getRepoBase
 import com.example.gitwise.transactionparser.readTransactions
 import com.example.gitwise.ui.theme.GitwiseTheme
 
@@ -30,13 +32,14 @@ class TransactionListActivity : ComponentActivity() {
     private val rawTransactionsState = mutableStateOf<List<Transaction>>(emptyList())
 
     fun getTransactions(context : Context) : List<Transaction> {
+        val repoBase = getRepoBase(context)
         try {
-            val gitManager = getGitManager(context)
+            getGitManager(repoBase, getConfig(context).commit).pull()
         } catch (e: Exception) {
             Toast.makeText(context, "Error pulling data: ${e.message}", Toast.LENGTH_SHORT).show()
         }
 
-        return readTransactions(getDataFile(context))
+        return readTransactions(getDataFile(repoBase))
     }
 
     private fun refreshData(context: Context) {
