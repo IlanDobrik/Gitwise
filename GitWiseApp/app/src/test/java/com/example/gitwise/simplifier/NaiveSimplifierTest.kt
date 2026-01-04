@@ -19,7 +19,7 @@ class NaiveSimplifierTest {
     fun testSimplifySingleTransaction() {
         val alice = Person("Alice")
         val bob = Person("Bob")
-        val transactions = listOf(Transaction(alice, bob, 100uL))
+        val transactions = listOf(Transaction("tacos",alice, bob, 100uL))
 
         val simplifier = NaiveSimplifier()
         val result = simplifier.simplify(transactions)
@@ -36,8 +36,8 @@ class NaiveSimplifierTest {
         val bob = Person("Bob")
         // Alice pays Bob 100, Bob pays Alice 50 -> Alice pays Bob 50
         val transactions = listOf(
-            Transaction(alice, bob, 100uL),
-            Transaction(bob, alice, 50uL)
+            Transaction("tacos",alice, bob, 100uL),
+            Transaction("pizaa", bob, alice, 50uL)
         )
 
         val simplifier = NaiveSimplifier()
@@ -56,9 +56,9 @@ class NaiveSimplifierTest {
         val charlie = Person("Charlie")
         // Alice pays Bob 100, Bob pays Charlie 100, Charlie pays Alice 100 -> All settled
         val transactions = listOf(
-            Transaction(alice, bob, 100uL),
-            Transaction(bob, charlie, 100uL),
-            Transaction(charlie, alice, 100uL)
+            Transaction("tacos", alice, bob, 100uL),
+            Transaction("pizza", bob, charlie, 100uL),
+            Transaction("drinks", charlie, alice, 100uL)
         )
 
         val simplifier = NaiveSimplifier()
@@ -81,8 +81,8 @@ class NaiveSimplifierTest {
         // Result should be Alice -> Bob 50, Alice -> Charlie 50 (or similar combination)
         
         val transactions = listOf(
-            Transaction(alice, bob, 100uL),
-            Transaction(bob, charlie, 50uL)
+            Transaction("tacos", alice, bob, 100uL),
+            Transaction("pizza", bob, charlie, 50uL)
         )
 
         val simplifier = NaiveSimplifier()
