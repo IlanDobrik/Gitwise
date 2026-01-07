@@ -128,10 +128,10 @@ fun getGitManager(repoBase: File, commit: Boolean) : GitManager{
     return gitManager
 }
 
-fun getDataFile(repoBase: File) : File {
-    return File("${repoBase.path}\\data.json")
+fun getDataDirectory(repoBase: File) : File {
+    return File(repoBase, "transactions")
 }
 
 fun getRepoBase(context: Context) : File {
-    return File("${context.filesDir.absolutePath}\\GitWise")
+    return File(context.filesDir, "GitWise")
 }

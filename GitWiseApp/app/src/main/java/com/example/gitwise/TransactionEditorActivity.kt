@@ -10,7 +10,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.example.gitwise.datatypes.Person
 import com.example.gitwise.datatypes.Transaction
 import com.example.gitwise.gitmanager.GitViewModel

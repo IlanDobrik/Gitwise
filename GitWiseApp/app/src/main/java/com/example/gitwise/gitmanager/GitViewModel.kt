@@ -30,11 +30,11 @@ class GitViewModel : ViewModel() {
             
             // First load from disk immediately if possible
             val repoBase = getRepoBase(context)
-            val dataFile = getDataFile(repoBase)
+            val dataDirectory = getDataDirectory(repoBase)
             
-            if (dataFile.exists()) {
+            if (dataDirectory.exists()) {
                 val cachedTransactions = withContext(Dispatchers.IO) {
-                    readTransactions(dataFile)
+                    readTransactions(dataDirectory)
                 }
                 _transactions.value = cachedTransactions
             }
@@ -46,7 +46,7 @@ class GitViewModel : ViewModel() {
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
-                readTransactions(dataFile)
+                readTransactions(dataDirectory)
             }
             
             _transactions.value = newTransactions
@@ -57,9 +57,9 @@ class GitViewModel : ViewModel() {
     fun saveTransaction(context: Context, transaction: Transaction, onComplete: () -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
             val repoBase = getRepoBase(context)
-            val dataFile = getDataFile(repoBase)
+            val dataDirectory = getDataDirectory(repoBase)
             
-            val currentList = readTransactions(dataFile).toMutableList()
+            val currentList = readTransactions(dataDirectory).toMutableList()
             val existingIndex = currentList.indexOfFirst { it.id == transaction.id }
             if (existingIndex != -1) {
                 currentList[existingIndex] = transaction
@@ -67,7 +67,7 @@ class GitViewModel : ViewModel() {
                 currentList.add(transaction)
             }
 
-            writeTransactions(dataFile, currentList)
+            writeTransactions(dataDirectory, currentList)
             // Update local state immediately
             _transactions.value = currentList
             
@@ -90,13 +90,13 @@ class GitViewModel : ViewModel() {
     fun deleteTransaction(context: Context, transactionId: UUID, onComplete: () -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
             val repoBase = getRepoBase(context)
-            val dataFile = getDataFile(repoBase)
+            val dataDirectory = getDataDirectory(repoBase)
 
-            val currentList = readTransactions(dataFile).toMutableList()
+            val currentList = readTransactions(dataDirectory).toMutableList()
             val wasRemoved = currentList.removeIf { it.id == transactionId }
 
             if (wasRemoved) {
-                writeTransactions(dataFile, currentList)
+                writeTransactions(dataDirectory, currentList)
                 // Update local state immediately
                 _transactions.value = currentList
                 
