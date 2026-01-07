@@ -24,6 +24,9 @@ class GitViewModel : ViewModel() {
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    private val _isFetchSuccessful = MutableStateFlow(true)
+    val isFetchSuccessful: StateFlow<Boolean> = _isFetchSuccessful.asStateFlow()
+
     fun loadTransactions(context: Context) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -43,8 +46,10 @@ class GitViewModel : ViewModel() {
             val newTransactions = withContext(Dispatchers.IO) {
                 try {
                     getGitManager(repoBase, getConfig(context).commit).pull()
+                    _isFetchSuccessful.value = true
                 } catch (e: Exception) {
                     e.printStackTrace()
+                    _isFetchSuccessful.value = false
                 }
                 readTransactions(dataDirectory).filter { it.isValid }
             }
@@ -84,8 +89,10 @@ class GitViewModel : ViewModel() {
                 try {
                     val gitManager = getGitManager(repoBase, true)
                     gitManager.commitPush("Update transaction: ${transaction.id} (invalidated old)")
+                    _isFetchSuccessful.value = true
                 } catch (e: Exception) {
                     e.printStackTrace()
+                    _isFetchSuccessful.value = false
                 }
             }
             
@@ -118,8 +125,10 @@ class GitViewModel : ViewModel() {
                     try {
                         val gitManager = getGitManager(repoBase, true)
                         gitManager.commitPush("Invalidate transaction: $transactionId")
+                        _isFetchSuccessful.value = true
                     } catch (e: Exception) {
                         e.printStackTrace()
+                        _isFetchSuccessful.value = false
                     }
                 }
             }
