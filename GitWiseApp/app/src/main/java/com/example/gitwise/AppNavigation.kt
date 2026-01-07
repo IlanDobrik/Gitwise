@@ -9,6 +9,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.gitwise.datatypes.Transaction
+import com.example.gitwise.gitmanager.GitStatusScreen
 import com.google.gson.Gson
 import java.net.URLDecoder
 import java.net.URLEncoder
@@ -19,6 +20,7 @@ object AppDestinations {
     const val CONFIG = "config"
     const val TRANSACTION_LIST = "transaction_list"
     const val TRANSACTION_EDITOR = "transaction_editor"
+    const val GIT_STATUS = "git_status"
 }
 
 @Composable
@@ -36,6 +38,9 @@ fun AppNavigation() {
         }
         composable(AppDestinations.TRANSACTION_LIST) {
             TransactionListScreen(navController = navController)
+        }
+        composable(AppDestinations.GIT_STATUS) {
+            GitStatusScreen(navController = navController)
         }
         composable(
             route = "${AppDestinations.TRANSACTION_EDITOR}?transaction={transaction}",

@@ -74,6 +74,15 @@ fun MainScreen(navController: NavController) {
 
             Button(modifier = Modifier.fillMaxWidth(),
                 onClick = {
+                    navController.navigate(AppDestinations.GIT_STATUS)
+                }) {
+                Text("Git Status")
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(modifier = Modifier.fillMaxWidth(),
+                onClick = {
                     navController.navigate(AppDestinations.CONFIG)
                 }) {
                 Text("Configuration")
