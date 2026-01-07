@@ -1,13 +1,8 @@
 package com.example.gitwise
 
-import android.content.Context
-import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import android.os.StrictMode
 import android.os.StrictMode.ThreadPolicy
-import com.example.gitwise.logger.TAG
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -26,104 +21,84 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.gitwise.config.clearConfig
 import com.example.gitwise.gitmanager.getRepoBase
 import com.example.gitwise.ui.theme.GitwiseTheme
 
-
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        val context : Context = this
+        
         // TODO remove
-        if (Build.VERSION.SDK_INT > 9) {
+        if (android.os.Build.VERSION.SDK_INT > 9) {
             val policy = ThreadPolicy.Builder().permitAll().build()
             StrictMode.setThreadPolicy(policy)
         }
 
-
         enableEdgeToEdge()
         setContent {
             GitwiseTheme {
-                GreetingScreen(context,
-                {
-                    startActivity(Intent(this@MainActivity, TransactionListActivity::class.java))
-                },
-                {
-                    startActivity(Intent(this@MainActivity, ConfigActivity::class.java))
-                },
-                {
-                    reset(context)
-                })
+                AppNavigation()
             }
         }
     }
 }
 
-
-fun reset(context: Context) {
-    getRepoBase(context).deleteRecursively()
-    clearConfig(context)
-}
-
 @Composable
-fun GreetingScreen(context: Context?,
-                   viewTransactionOnClick: () -> Unit = {},
-                   newConfigOnClick: () -> Unit = {},
-                   resetOnClick: () -> Unit = {}) {
+fun MainScreen(navController: NavController) {
+    val context = LocalContext.current
+    
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-        // Added padding 16.dp to the Column for better spacing from edges
         Column(modifier = Modifier
             .padding(innerPadding)
             .padding(16.dp),
             verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
-            {
-                Spacer(modifier = Modifier.height(16.dp))
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Spacer(modifier = Modifier.height(16.dp))
 
-                // Existing Transaction Button
-                Button(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = {
-                        viewTransactionOnClick()
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = {
+                    navController.navigate(AppDestinations.TRANSACTION_LIST)
+                }) {
+                Text("View Transactions")
+            }
 
-                    }) {
-                    Text("View Transactions")
-                }
+            Spacer(modifier = Modifier.height(16.dp))
 
-                Spacer(modifier = Modifier.height(16.dp))
+            Button(modifier = Modifier.fillMaxWidth(),
+                onClick = {
+                    navController.navigate(AppDestinations.CONFIG)
+                }) {
+                Text("Configuration")
+            }
 
-                // New Config Activity Button
-                Button(modifier = Modifier.fillMaxWidth(),
-                    onClick = {
-                        newConfigOnClick()
-                    }) {
-                    Text("Configuration")
-                }
+            Spacer(modifier = Modifier.height(32.dp))
 
-                Spacer(modifier = Modifier.height(32.dp))
-
-                Button(
-                    onClick = { resetOnClick() },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
-                    modifier = Modifier.height(36.dp) // Smaller height
-                ) {
-                    Text("Reset")
-                }
-        })
+            Button(
+                onClick = { 
+                    getRepoBase(context).deleteRecursively()
+                    clearConfig(context)
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+                modifier = Modifier.height(36.dp)
+            ) {
+                Text("Reset")
+            }
+        }
     }
-
 }
-
 
 @Preview(showBackground = true)
 @Composable
-fun GreetingPreview() {
+fun MainScreenPreview() {
     GitwiseTheme {
-        GreetingScreen(null, {}, {}, {})
+        MainScreen(navController = rememberNavController())
     }
 }
-
