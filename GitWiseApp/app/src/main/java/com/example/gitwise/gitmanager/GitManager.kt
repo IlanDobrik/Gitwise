@@ -4,6 +4,7 @@ import android.content.Context
 import com.example.gitwise.logger.TAG
 import android.util.Log
 import org.eclipse.jgit.api.Git
+import org.eclipse.jgit.api.ResetCommand
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import java.io.File
 
@@ -47,8 +48,13 @@ class GitManager(
     fun push() {
         Log.i(TAG, "pushing")
         Git.open(repoPath).use { git ->
-            git.push().call()
-            Log.i(TAG, "pushed successfully")
+            try {
+                git.push().call()
+                Log.i(TAG, "pushed successfully")
+            } catch (e: Exception) {
+                Log.e(TAG, "Push failed", e)
+                throw e
+            }
         }
     }
 
@@ -88,13 +94,50 @@ class GitManager(
         }
     }
 
-    fun pull() {
+    // Returns true if rebase was successful, false if it failed and reset was performed
+    fun pull(): Boolean {
         Git.open(repoPath).use { git ->
-            val pullCommand = git.pull()
-            getCredentialsProvider()?.let {
-                pullCommand.setCredentialsProvider(it)
+            try {
+                val pullCommand = git.pull()
+                pullCommand.setRebase(true)
+                getCredentialsProvider()?.let {
+                    pullCommand.setCredentialsProvider(it)
+                }
+                
+                val result = pullCommand.call()
+                if (!result.isSuccessful) {
+                    throw Exception("Pull returned unsuccessful result: ${result.mergeResult.mergeStatus}")
+                }
+                return true
+            } catch (e: Exception) {
+                Log.e(TAG, "Pull failed with rebase, resetting to remote", e)
+                
+                try {
+                    val currentBranch = git.repository.branch
+                    Log.i(TAG, "Resetting $currentBranch to origin/$currentBranch")
+                    // Fetch to ensure we have the latest
+                    try {
+                        val fetch = git.fetch()
+                        getCredentialsProvider()?.let {
+                            fetch.setCredentialsProvider(it)
+                        }
+                        fetch.call()
+                    } catch (fetchEx: Exception) {
+                         Log.e(TAG, "Fetch failed before reset", fetchEx)
+                         // Continue to try reset anyway if we have the ref?
+                    }
+
+                    git.reset()
+                        .setMode(ResetCommand.ResetType.HARD)
+                        .setRef("origin/$currentBranch")
+                        .call()
+                    
+                    return false
+                } catch (resetEx: Exception) {
+                    Log.e(TAG, "Reset also failed", resetEx)
+                    throw resetEx
+                }
             }
-            pullCommand.call()
         }
     }
 }
@@ -124,7 +167,7 @@ fun getGitManager(repoBase: File, commit: Boolean) : GitManager{
 
     // TODO change when move to repo orientation
     gitManager.checkout("data")
-    gitManager.pull()
+    // Note: removed implicit pull() to allow caller to handle pull results (like reset Toast)
     return gitManager
 }
 

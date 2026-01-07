@@ -1,6 +1,7 @@
 package com.example.gitwise.gitmanager
 
 import android.content.Context
+import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gitwise.config.getConfig
@@ -30,6 +31,7 @@ class GitViewModel : ViewModel() {
     fun loadTransactions(context: Context) {
         viewModelScope.launch {
             _isLoading.value = true
+            _isFetchSuccessful.value = false
             
             // First load from disk immediately if possible
             val repoBase = getRepoBase(context)
@@ -44,13 +46,26 @@ class GitViewModel : ViewModel() {
             
             // Then fetch from remote
             val newTransactions = withContext(Dispatchers.IO) {
+                var success = false
                 try {
-                    getGitManager(repoBase, getConfig(context).commit).pull()
+                    // pull() now returns a boolean: true for success, false for reset performed
+                    val gitManager = getGitManager(repoBase, getConfig(context).commit)
+                    success = gitManager.pull()
+                    
+                    // If pull succeeded (either normally or via reset), we consider fetch successful
                     _isFetchSuccessful.value = true
                 } catch (e: Exception) {
                     e.printStackTrace()
                     _isFetchSuccessful.value = false
                 }
+                
+                // If success is false, it means a reset happened inside pull()
+                if (!success && _isFetchSuccessful.value) {
+                     withContext(Dispatchers.Main) {
+                        Toast.makeText(context, "Sync failed. Reset to remote version.", Toast.LENGTH_LONG).show()
+                     }
+                }
+                
                 readTransactions(dataDirectory).filter { it.isValid }
             }
             
@@ -88,7 +103,12 @@ class GitViewModel : ViewModel() {
             if (config.commit) {
                 try {
                     val gitManager = getGitManager(repoBase, true)
-                    gitManager.commitPush("Update transaction: ${transaction.id} (invalidated old)")
+                    val message = if (oldTransactionId != null) {
+                        "Update transaction:${oldTransactionId} -> ${transaction.id}"
+                    } else {
+                        "Add transaction: ${transaction.id}"
+                    }
+                    gitManager.commitPush(message)
                     _isFetchSuccessful.value = true
                 } catch (e: Exception) {
                     e.printStackTrace()
