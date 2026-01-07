@@ -144,6 +144,20 @@ class GitManager(
             }
         }
     }
+
+    fun getRepoMembers(): List<String> {
+        return try {
+            Git.open(repoPath).use { git ->
+                git.log().call()
+                    .map { it.authorIdent.name }
+                    .distinct()
+                    .sorted()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to get repo members", e)
+            emptyList()
+        }
+    }
 }
 
 private fun clone(url: String, path: File) {

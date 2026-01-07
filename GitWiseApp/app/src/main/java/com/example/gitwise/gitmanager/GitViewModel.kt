@@ -28,6 +28,9 @@ class GitViewModel : ViewModel() {
     private val _isFetchSuccessful = MutableStateFlow(true)
     val isFetchSuccessful: StateFlow<Boolean> = _isFetchSuccessful.asStateFlow()
 
+    private val _repoMembers = MutableStateFlow<List<String>>(emptyList())
+    val repoMembers: StateFlow<List<String>> = _repoMembers.asStateFlow()
+
     fun loadTransactions(context: Context) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -42,15 +45,32 @@ class GitViewModel : ViewModel() {
                     readTransactions(dataDirectory).filter { it.isValid }
                 }
                 _transactions.value = cachedTransactions
+                
+                // Also load cached members if repo exists
+                // Run in background to avoid blocking main thread or delaying transaction fetch
+                viewModelScope.launch(Dispatchers.IO) {
+                    try {
+                        val gitManager = getGitManager(repoBase, getConfig(context).commit)
+                        val members = gitManager.getRepoMembers()
+                        _repoMembers.value = members
+                    } catch (e: Exception) {
+                        // Ignore if git manager fails here
+                    }
+                }
             }
             
             // Then fetch from remote
             val newTransactions = withContext(Dispatchers.IO) {
                 var success = false
+                var members: List<String> = emptyList()
+                
                 try {
                     // pull() now returns a boolean: true for success, false for reset performed
                     val gitManager = getGitManager(repoBase, getConfig(context).commit)
                     success = gitManager.pull()
+                    
+                    // After pull, fetch members
+                    members = gitManager.getRepoMembers()
                     
                     // If pull succeeded (either normally or via reset), we consider fetch successful
                     _isFetchSuccessful.value = true
@@ -64,6 +84,10 @@ class GitViewModel : ViewModel() {
                      withContext(Dispatchers.Main) {
                         Toast.makeText(context, "Sync failed. Reset to remote version.", Toast.LENGTH_LONG).show()
                      }
+                }
+                
+                if (_isFetchSuccessful.value) {
+                    _repoMembers.value = members
                 }
                 
                 readTransactions(dataDirectory).filter { it.isValid }
@@ -104,12 +128,19 @@ class GitViewModel : ViewModel() {
                 try {
                     val gitManager = getGitManager(repoBase, true)
                     val message = if (oldTransactionId != null) {
-                        "Update transaction:${oldTransactionId} -> ${transaction.id}"
+                        "Update transaction: $oldTransactionId -> ${transaction.id}"
                     } else {
                         "Add transaction: ${transaction.id}"
                     }
-                    gitManager.commitPush(message)
+
+                    gitManager.commit(message)
+                    gitManager.push()
+                    
                     _isFetchSuccessful.value = true
+                    
+                    // Update members list as current user might be new
+                    val members = gitManager.getRepoMembers()
+                    _repoMembers.value = members
                 } catch (e: Exception) {
                     e.printStackTrace()
                     _isFetchSuccessful.value = false
