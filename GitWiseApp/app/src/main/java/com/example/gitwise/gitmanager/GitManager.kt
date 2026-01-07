@@ -49,7 +49,11 @@ class GitManager(
         Log.i(TAG, "pushing")
         Git.open(repoPath).use { git ->
             try {
-                git.push().call()
+                val pushCommand = git.push()
+                getCredentialsProvider()?.let {
+                    pushCommand.setCredentialsProvider(it)
+                }
+                pushCommand.call()
                 Log.i(TAG, "pushed successfully")
             } catch (e: Exception) {
                 Log.e(TAG, "Push failed", e)
