@@ -30,9 +30,12 @@ fun TransactionEditorScreen(
             TransactionEditor(
                 initialTransaction = initialTransaction,
                 onSave = { savedTransaction ->
-                    viewModel.saveTransaction(context, savedTransaction) {
+                    // Pass the initial transaction's ID as the "old" one if we are editing
+                    val oldTransactionId = initialTransaction?.id
+                    viewModel.saveTransaction(context, savedTransaction, oldTransactionId) {
                         navController.popBackStack()
                     }
+                    Toast.makeText(context, "Transaction pushed", Toast.LENGTH_SHORT).show()
                 },
                 onDelete = {
                     if (initialTransaction != null) {
@@ -53,12 +56,14 @@ fun TransactionEditor(
     onSave: (Transaction) -> Unit,
     onDelete: () -> Unit
 ) {
-    // If we're editing, use the transaction's ID. If new, create a new ID.
-    val transactionId = initialTransaction?.id ?: UUID.randomUUID()
+    // If we're editing, we technically create a NEW transaction (new ID) to supersede the old one.
+    // However, the 'id' field in Transaction is a val with a default value of UUID.randomUUID().
+    // So simply constructing a new Transaction object generates a new ID automatically.
     
     var payer by remember { mutableStateOf(initialTransaction?.payer?.name ?: "") }
     var ower by remember { mutableStateOf(initialTransaction?.ower?.name ?: "") }
     var sum by remember { mutableStateOf(initialTransaction?.sum?.toString() ?: "") }
+    var reason by remember { mutableStateOf(initialTransaction?.reason ?: "") }
     val context = LocalContext.current
 
     Column(modifier = modifier.padding(16.dp)) {
@@ -82,6 +87,13 @@ fun TransactionEditor(
             label = { Text("Amount") },
             modifier = Modifier.fillMaxWidth()
         )
+        Spacer(modifier = Modifier.height(8.dp))
+        TextField(
+            value = reason,
+            onValueChange = { reason = it },
+            label = { Text("Reason") },
+            modifier = Modifier.fillMaxWidth()
+        )
         Spacer(modifier = Modifier.height(16.dp))
         Button(
             onClick = {
@@ -89,10 +101,11 @@ fun TransactionEditor(
                 if (payer.isNotBlank() && ower.isNotBlank() && sumLong != null && sumLong > 0) {
                     onSave(
                         Transaction(
+                            reason = reason,
                             payer = Person(payer),
                             ower = Person(ower),
-                            sum = sumLong.toULong(),
-                            id = transactionId
+                            sum = sumLong.toULong()
+                            // id is automatically generated
                         )
                     )
                 } else {

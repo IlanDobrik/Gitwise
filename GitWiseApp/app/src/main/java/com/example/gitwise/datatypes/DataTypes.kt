@@ -13,4 +13,5 @@ data class Transaction(
 
     // Always last for convenience
     val id: UUID = UUID.randomUUID(),
+    val isValid: Boolean = true
 ): Serializable

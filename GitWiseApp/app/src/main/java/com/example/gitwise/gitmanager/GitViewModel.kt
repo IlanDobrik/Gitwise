@@ -34,7 +34,7 @@ class GitViewModel : ViewModel() {
             
             if (dataDirectory.exists()) {
                 val cachedTransactions = withContext(Dispatchers.IO) {
-                    readTransactions(dataDirectory)
+                    readTransactions(dataDirectory).filter { it.isValid }
                 }
                 _transactions.value = cachedTransactions
             }
@@ -46,7 +46,7 @@ class GitViewModel : ViewModel() {
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
-                readTransactions(dataDirectory)
+                readTransactions(dataDirectory).filter { it.isValid }
             }
             
             _transactions.value = newTransactions
@@ -54,28 +54,36 @@ class GitViewModel : ViewModel() {
         }
     }
 
-    fun saveTransaction(context: Context, transaction: Transaction, onComplete: () -> Unit) {
+    fun saveTransaction(context: Context, transaction: Transaction, oldTransactionId: UUID?, onComplete: () -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
             val repoBase = getRepoBase(context)
             val dataDirectory = getDataDirectory(repoBase)
             
-            val currentList = readTransactions(dataDirectory).toMutableList()
-            val existingIndex = currentList.indexOfFirst { it.id == transaction.id }
-            if (existingIndex != -1) {
-                currentList[existingIndex] = transaction
-            } else {
-                currentList.add(transaction)
+            // Read all transactions, including invalid ones (we need to invalidate old ones)
+            val allTransactions = readTransactions(dataDirectory).toMutableList()
+            
+            // If we are editing (oldTransactionId is provided), find the old one and invalidate it
+            if (oldTransactionId != null) {
+                val oldIndex = allTransactions.indexOfFirst { it.id == oldTransactionId }
+                if (oldIndex != -1) {
+                    val oldTransaction = allTransactions[oldIndex]
+                    allTransactions[oldIndex] = oldTransaction.copy(isValid = false)
+                }
             }
+            
+            // Add the new valid transaction
+            allTransactions.add(transaction)
 
-            writeTransactions(dataDirectory, currentList)
-            // Update local state immediately
-            _transactions.value = currentList
+            writeTransactions(dataDirectory, allTransactions)
+            
+            // Update local state (only valid ones)
+            _transactions.value = allTransactions.filter { it.isValid }
             
             val config = getConfig(context)
             if (config.commit) {
                 try {
                     val gitManager = getGitManager(repoBase, true)
-                    gitManager.commitPush("Update transaction: ${transaction.id}")
+                    gitManager.commitPush("Update transaction: ${transaction.id} (invalidated old)")
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
@@ -92,19 +100,24 @@ class GitViewModel : ViewModel() {
             val repoBase = getRepoBase(context)
             val dataDirectory = getDataDirectory(repoBase)
 
-            val currentList = readTransactions(dataDirectory).toMutableList()
-            val wasRemoved = currentList.removeIf { it.id == transactionId }
-
-            if (wasRemoved) {
-                writeTransactions(dataDirectory, currentList)
-                // Update local state immediately
-                _transactions.value = currentList
+            val allTransactions = readTransactions(dataDirectory).toMutableList()
+            val index = allTransactions.indexOfFirst { it.id == transactionId }
+            
+            if (index != -1) {
+                // Instead of removing, we invalidate it
+                val transaction = allTransactions[index]
+                allTransactions[index] = transaction.copy(isValid = false)
+                
+                writeTransactions(dataDirectory, allTransactions)
+                
+                // Update local state (only valid ones)
+                _transactions.value = allTransactions.filter { it.isValid }
                 
                 val config = getConfig(context)
                 if (config.commit) {
                     try {
                         val gitManager = getGitManager(repoBase, true)
-                        gitManager.commitPush("Delete transaction: $transactionId")
+                        gitManager.commitPush("Invalidate transaction: $transactionId")
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }
