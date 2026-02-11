@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -43,7 +42,7 @@ fun ConfigScreen(navController: NavController, viewModel: GitViewModel = viewMod
     val repoMembers by viewModel.repoMembers.collectAsState()
 
     var name by remember { mutableStateOf(config.person?.name ?: "") }
-    var branchName by remember { mutableStateOf(config.branchName) }
+    var branchName by remember { mutableStateOf(config.branchName ?: "") }
     var autoCommit by remember { mutableStateOf(config.commit) }
 
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
@@ -70,12 +69,11 @@ fun ConfigScreen(navController: NavController, viewModel: GitViewModel = viewMod
             )
 
             // Branch Field
-            OutlinedTextField(
-                value = branchName ?: "",
-                onValueChange = { branchName = it },
-                label = { Text("Default Branch") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+            DropdownTextField(
+                label = "Default Branch",
+                value = branchName,
+                suggestions = emptyList(), // No suggestions for branch name
+                onValueChange = { branchName = it }
             )
 
             // Auto Commit Switch
@@ -112,6 +110,10 @@ fun ConfigScreen(navController: NavController, viewModel: GitViewModel = viewMod
                         commit = autoCommit,
                         branchName = branchName
                     )
+
+                    if (config.person?.name != name) {
+                        viewModel.addMember(context, newPerson)
+                    }
 
                     saveConfig(context, newConfig)
                     navController.popBackStack()

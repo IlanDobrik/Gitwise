@@ -3,6 +3,8 @@ package com.example.gitwise.gitmanager
 import android.content.Context
 import com.example.gitwise.logger.TAG
 import android.util.Log
+import com.example.gitwise.datatypes.Person
+import com.google.gson.Gson
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.ResetCommand
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
@@ -146,17 +148,31 @@ class GitManager(
     }
 
     fun getRepoMembers(): List<String> {
-        return try {
-            Git.open(repoPath).use { git ->
-                git.log().call()
-                    .map { it.authorIdent.name }
-                    .distinct()
-                    .sorted()
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to get repo members", e)
-            emptyList()
+        val membersDir = getMembersDirectory(repoPath)
+        if (!membersDir.exists()) {
+            return emptyList()
         }
+        val gson = Gson()
+        return membersDir.listFiles()?.mapNotNull { file ->
+            try {
+                val person = gson.fromJson(file.readText(), Person::class.java)
+                person.name
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to parse member file: ${file.name}", e)
+                null
+            }
+        } ?: emptyList()
+    }
+
+    fun addMember(person: Person) {
+        val membersDir = getMembersDirectory(repoPath)
+        if (!membersDir.exists()) {
+            membersDir.mkdirs()
+        }
+        val gson = Gson()
+        val personFile = File(membersDir, person.name)
+        personFile.writeText(gson.toJson(person))
+        commit("Added member: ${person.name}")
     }
 }
 
@@ -169,30 +185,32 @@ private fun clone(url: String, path: File) {
             .setDirectory(path)
             .call()
         Log.i(TAG, "cloned successfully")
-    }
-    catch (e: Exception) {
+    } catch (e: Exception) {
         Log.i(TAG, "Error cloning repository: $e")
     }
 
 }
 
-fun getGitManager(repoBase: File, commit: Boolean) : GitManager{
+fun getGitManager(repoBase: File, commit: Boolean, branchName: String?): GitManager {
     val gitManager = GitManager(commit, repoBase, null, null)
 
     if (!repoBase.exists()) {
         clone(REPO_URL, repoBase)
     }
 
-    // TODO change when move to repo orientation
-    gitManager.checkout("data")
+    gitManager.checkout(branchName ?: "data")
     // Note: removed implicit pull() to allow caller to handle pull results (like reset Toast)
     return gitManager
 }
 
-fun getDataDirectory(repoBase: File) : File {
+fun getDataDirectory(repoBase: File): File {
     return File(repoBase, "transactions")
 }
 
-fun getRepoBase(context: Context) : File {
+fun getMembersDirectory(repoBase: File): File {
+    return File(repoBase, "members")
+}
+
+fun getRepoBase(context: Context): File {
     return File(context.filesDir, "GitWise")
 }
