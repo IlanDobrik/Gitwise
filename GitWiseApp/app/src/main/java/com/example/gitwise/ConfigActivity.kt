@@ -15,6 +15,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,18 +27,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.gitwise.config.Config
 import com.example.gitwise.config.getConfig
 import com.example.gitwise.config.saveConfig
 import com.example.gitwise.datatypes.Person
+import com.example.gitwise.gitmanager.GitViewModel
 
 @Composable
-fun ConfigScreen(navController: NavController) {
+fun ConfigScreen(navController: NavController, viewModel: GitViewModel = viewModel()) {
     val context = LocalContext.current
     val config = remember { getConfig(context) }
-    
+    val repoMembers by viewModel.repoMembers.collectAsState()
+
     var name by remember { mutableStateOf(config.person?.name ?: "") }
     var branchName by remember { mutableStateOf(config.branchName) }
     var autoCommit by remember { mutableStateOf(config.commit) }
@@ -58,12 +62,11 @@ fun ConfigScreen(navController: NavController) {
             )
 
             // Name Field
-            OutlinedTextField(
+            DropdownTextField(
+                label = "User Name",
                 value = name,
-                onValueChange = { name = it },
-                label = { Text("User Name") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                suggestions = repoMembers,
+                onValueChange = { name = it }
             )
 
             // Branch Field

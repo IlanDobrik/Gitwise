@@ -1,4 +1,4 @@
-package com.example.gitwise.simlifier
+package com.example.gitwise.simplifier
 
 import com.example.gitwise.datatypes.Transaction
 

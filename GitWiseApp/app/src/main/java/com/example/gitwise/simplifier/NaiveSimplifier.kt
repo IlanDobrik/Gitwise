@@ -1,9 +1,8 @@
-package com.example.gitwise.NaiveSimplifier
+package com.example.gitwise.simplifier
 
-import com.example.gitwise.simlifier.Simplifier
-import com.example.gitwise.datatypes.Transaction
+import com.example.gitwise.datatypes.Debt
 import com.example.gitwise.datatypes.Person
-
+import com.example.gitwise.datatypes.Transaction
 
 class NaiveSimplifier : Simplifier {
     fun netBalance(transactions: List<Transaction>): Map<Person, Long> {
@@ -11,55 +10,57 @@ class NaiveSimplifier : Simplifier {
 
         // Compute net balance per person
         for (transaction in transactions) {
+            if (!transaction.isValid) continue
             balance[transaction.payer] = (balance[transaction.payer] ?: 0L) + transaction.sum.toLong()
-            balance[transaction.ower]  = (balance[transaction.ower]  ?: 0L) - transaction.sum.toLong()
+            for (debt in transaction.debts) {
+                balance[debt.person] = (balance[debt.person] ?: 0L) - debt.amount.toLong()
+            }
         }
 
         return balance
     }
 
     override fun simplify(transactions: List<Transaction>): List<Transaction> {
-            val balance = netBalance(transactions)
+        val balance = netBalance(transactions)
 
-            // Separate creditors and debtors
-            val creditors = ArrayDeque<Pair<Person, Long>>()
-            val debtors   = ArrayDeque<Pair<Person, Long>>()
+        // Separate creditors and debtors
+        val creditors = ArrayDeque<Pair<Person, Long>>()
+        val debtors = ArrayDeque<Pair<Person, Long>>()
 
-            for ((person, amount) in balance) {
-                when {
-                    amount > 0 -> creditors.add(person to amount)
-                    amount < 0 -> debtors.add(person to amount)
-                }
+        for ((person, amount) in balance) {
+            when {
+                amount > 0 -> creditors.add(person to amount)
+                amount < 0 -> debtors.add(person to amount)
             }
+        }
 
-            // Settle balances
-            val result = mutableListOf<Transaction>()
+        // Settle balances
+        val result = mutableListOf<Transaction>()
 
-            while (creditors.isNotEmpty() && debtors.isNotEmpty()) {
-                val (creditor, credit) = creditors.removeFirst()
-                val (debtor, debt)     = debtors.removeFirst()
+        while (creditors.isNotEmpty() && debtors.isNotEmpty()) {
+            val (creditor, credit) = creditors.removeFirst()
+            val (debtor, debt) = debtors.removeFirst()
 
-                val settled = minOf(credit, -debt)
+            val settled = minOf(credit, -debt)
 
-                result.add(
-                    Transaction(
-                        reason = "Settlement",
-                        payer = creditor,
-                        ower = debtor,
-                        sum = settled.toULong()
-                    )
+            result.add(
+                Transaction(
+                    reason = "Settlement",
+                    payer = creditor,
+                    debts = listOf(Debt(debtor, settled.toULong()))
                 )
+            )
 
-                val remainingCredit = credit - settled
-                val remainingDebt   = debt + settled
+            val remainingCredit = credit - settled
+            val remainingDebt = debt + settled
 
-                if (remainingCredit > 0)
-                    creditors.addFirst(creditor to remainingCredit)
+            if (remainingCredit > 0)
+                creditors.addFirst(creditor to remainingCredit)
 
-                if (remainingDebt < 0)
-                    debtors.addFirst(debtor to remainingDebt)
-            }
+            if (remainingDebt < 0)
+                debtors.addFirst(debtor to remainingDebt)
+        }
 
-            return result
+        return result
     }
 }

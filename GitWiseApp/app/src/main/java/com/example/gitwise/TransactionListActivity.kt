@@ -18,9 +18,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.gitwise.datatypes.Transaction
+import com.example.gitwise.config.getConfig
+import com.example.gitwise.datatypes.Debt
 import com.example.gitwise.datatypes.Person
+import com.example.gitwise.datatypes.Transaction
 import com.example.gitwise.gitmanager.GitViewModel
+import com.example.gitwise.simplifier.NaiveSimplifier
 import com.google.gson.Gson
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -42,7 +45,7 @@ fun TransactionListScreen(
 
     val displayedTransactions = remember(rawTransactions, isSimplified) {
         if (isSimplified) {
-            val nativeSimplifier = com.example.gitwise.NaiveSimplifier.NaiveSimplifier()
+            val nativeSimplifier = NaiveSimplifier()
             nativeSimplifier.simplify(rawTransactions)
         } else {
             rawTransactions
@@ -115,11 +118,16 @@ fun TransactionList(
     modifier: Modifier = Modifier,
     onEditClick: (Transaction) -> Unit
 ) {
+    val context = LocalContext.current
+    val config = remember { getConfig(context) }
+    val currentUser = config.person
+
     LazyColumn(modifier = modifier) {
         items(transactions) { transaction ->
             TransactionItem(
                 transaction = transaction,
                 showEditButton = showEditButton,
+                currentUser = currentUser,
                 onEdit = { onEditClick(transaction) }
             )
         }
@@ -130,8 +138,20 @@ fun TransactionList(
 fun TransactionItem(
     transaction: Transaction,
     showEditButton: Boolean,
+    currentUser: Person?,
     onEdit: () -> Unit
 ) {
+    val userOwes = transaction.debts.find { it.person == currentUser }?.amount?.toLong() ?: 0L
+    val userIsPayer = transaction.payer == currentUser
+
+    val balance = if (userIsPayer) transaction.sum.toLong() - userOwes else -userOwes
+
+    val balanceColor = when {
+        balance > 0 -> Color.Green
+        balance < 0 -> Color.Red
+        else -> Color.Gray
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -140,8 +160,11 @@ fun TransactionItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = "${transaction.payer.name} owes ${transaction.ower.name}")
+            Text(text = "${transaction.debts.joinToString { it.person.name }} owes ${transaction.payer.name}")
             Text(text = "Amount: ${transaction.sum}")
+        }
+        if (currentUser != null) {
+            Text(text = "You owe: $balance", color = balanceColor)
         }
         if (showEditButton) {
             IconButton(onClick = onEdit) {
@@ -156,10 +179,18 @@ fun TransactionItem(
 fun TransactionListScreenPreview() {
     com.example.gitwise.ui.theme.GitwiseTheme {
         val transactions = listOf(
-            Transaction("tacos", Person("Alice"), Person("Bob"), 100uL),
-            Transaction("pizza", Person("Bob"), Person("Charlie"), 50uL)
+            Transaction(
+                "tacos",
+                Person("Alice"),
+                listOf(Debt(Person("Bob"), 100uL))
+            ),
+            Transaction(
+                "pizza",
+                Person("Bob"),
+                listOf(Debt(Person("Charlie"), 50uL))
+            )
         )
-        
+
         Scaffold(
             modifier = Modifier.fillMaxSize()
         ) { innerPadding ->
@@ -173,7 +204,7 @@ fun TransactionListScreenPreview() {
                     ) {
                         Text("Show All Transactions")
                     }
-                    
+
                     TransactionList(
                         transactions = transactions,
                         showEditButton = true,
