@@ -84,13 +84,8 @@ fun ConfigScreen(navController: NavController, viewModel: GitViewModel = viewMod
             ) {
                 Column {
                     Text(
-                        text = "Enable Auto-Push",
+                        text = "Enable Commits",
                         style = MaterialTheme.typography.bodyLarge
-                    )
-                    Text(
-                        text = "Automatically push changes",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 Switch(
@@ -110,12 +105,12 @@ fun ConfigScreen(navController: NavController, viewModel: GitViewModel = viewMod
                         commit = autoCommit,
                         branchName = branchName
                     )
+                    saveConfig(context, newConfig)
 
                     if (config.person?.name != name) {
                         viewModel.addMember(context, newPerson)
                     }
 
-                    saveConfig(context, newConfig)
                     navController.popBackStack()
                 },
                 modifier = Modifier
